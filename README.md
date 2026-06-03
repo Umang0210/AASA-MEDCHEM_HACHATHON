@@ -277,7 +277,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | Neon PostgreSQL connection string (from Neon console → Connection Details → Pooled connection) |
-| `NEXTAUTH_SECRET` | Random string for JWT signing. Generate with: `openssl rand -base64 32` |
+| `AUTH_SECRET` | Random string for JWT signing. Generate with: `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | Full URL of the app (`http://localhost:3000` locally, `https://your-app.vercel.app` in production) |
 
 ---
@@ -294,7 +294,7 @@ git push origin main
 
 # 3. In Vercel project settings → Environment Variables, add:
 #    DATABASE_URL      = (your Neon connection string)
-#    NEXTAUTH_SECRET   = (run: openssl rand -base64 32)
+#    AUTH_SECRET       = (run: openssl rand -base64 32)
 #    NEXTAUTH_URL      = https://your-app.vercel.app
 
 # 4. Deploy (Vercel auto-builds on git push)

@@ -6,57 +6,113 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+  },
+
   pages: {
     signIn: "/login",
   },
+
   providers: [
     Credentials({
       name: "credentials",
+
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        email: {
+          label: "Email",
+          type: "email",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+        },
       },
+
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        try {
+          console.log("LOGIN ATTEMPT:", credentials?.email);
 
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, credentials.email as string))
-          .limit(1);
+          if (!credentials?.email || !credentials?.password) {
+            console.log("Missing credentials");
+            return null;
+          }
 
-        if (!user) return null;
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, credentials.email as string))
+            .limit(1);
 
-        const valid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash
-        );
-        if (!valid) return null;
+          console.log("User found:", !!user);
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+          if (!user) {
+            console.log("User not found");
+            return null;
+          }
+
+          console.log("User email:", user.email);
+          console.log("Has password hash:", !!user.passwordHash);
+
+          const valid = await bcrypt.compare(
+            credentials.password as string,
+            user.passwordHash
+          );
+
+          console.log("Password valid:", valid);
+
+          if (!valid) {
+            console.log("Invalid password");
+            return null;
+          }
+
+          console.log("Login successful");
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("AUTHORIZE ERROR:", error);
+          throw error;
+        }
       },
     }),
   ],
+
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = (user as { role?: string }).role;
+      try {
+        if (user) {
+          token.id = user.id;
+          token.role = (user as { role?: string }).role;
+        }
+
+        return token;
+      } catch (error) {
+        console.error("JWT CALLBACK ERROR:", error);
+        throw error;
       }
-      return token;
     },
+
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+      try {
+        console.log("SESSION CALLBACK");
+
+        if (session.user) {
+          (session.user as any).id = token.id;
+          (session.user as any).role = token.role;
+        }
+
+        return session;
+      } catch (error) {
+        console.error("SESSION CALLBACK ERROR:", error);
+        throw error;
       }
-      return session;
     },
   },
+
+  debug: true,
 });
